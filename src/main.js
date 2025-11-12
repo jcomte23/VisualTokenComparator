@@ -26,15 +26,26 @@ function convertToToon(obj, indent = 0) {
   const space = "  ".repeat(indent);
 
   if (Array.isArray(obj)) {
-    // Para arrays: key[n]: item1, item2, item3
-    const arrValues = obj.map(formatValue).join(",");
-    return `[${obj.length}]: ${arrValues}`;
+    // Si el array contiene objetos y todas tienen las mismas claves
+    if (obj.length > 0 && typeof obj[0] === "object" && !Array.isArray(obj[0])) {
+      const keys = Object.keys(obj[0]);
+      const header = `[${obj.length}]{${keys.join(",")}}:`;
+      const rows = obj
+        .map(item => keys.map(k => formatValue(item[k])).join(","))
+        .map(line => `${space}  ${line}`)
+        .join("\n");
+      return `${header}\n${rows}`;
+    } else {
+      // Array simple de valores
+      const values = obj.map(formatValue).join(",");
+      return `[${obj.length}]: ${values}`;
+    }
   } else if (typeof obj === "object" && obj !== null) {
-    // Para objetos: cada key en nueva línea con indentación
+    // Objetos anidados
     return Object.entries(obj)
       .map(([key, value]) => {
         if (Array.isArray(value)) {
-          return `${space}${key}[${value.length}]: ${value.map(formatValue).join(",")}`;
+          return `${space}${key}: ${convertToToon(value, indent + 1)}`;
         } else if (typeof value === "object" && value !== null) {
           return `${space}${key}:\n${convertToToon(value, indent + 1)}`;
         } else {
