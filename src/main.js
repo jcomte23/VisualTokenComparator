@@ -70,9 +70,6 @@ function formatValue(val) {
 }
 
 // ==============================
-// 🧠 Llamada a Gemini API
-// ==============================
-// ==============================
 // 🧠 Llamada a Gemini API correcta
 // ==============================
 async function geminiApiCall(payload) {
@@ -83,13 +80,13 @@ async function geminiApiCall(payload) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Goog-Api-Key": import.meta.env.VITE_GEMINI_API_KEY  // <- aquí va tu llave
+        "X-Goog-Api-Key": import.meta.env.VITE_GEMINI_API_KEY
       },
       body: JSON.stringify({
         contents: [
           {
             parts: [
-              { text: payload }  // tu JSON o TOON
+              { text: payload }
             ]
           }
         ]
@@ -99,8 +96,8 @@ async function geminiApiCall(payload) {
     const data = await response.json();
     console.log("Gemini raw response:", data);
 
-    // Ajusta según cómo Google devuelve los tokens
-    const tokens = data?.metadata?.tokenUsage?.totalTokens ?? 0;
+    // ✅ Extraemos los tokens correctamente
+    const tokens = data?.usageMetadata?.promptTokenCount ?? 0;
 
     return { tokens };
 
@@ -109,7 +106,6 @@ async function geminiApiCall(payload) {
     return { tokens: 0 };
   }
 }
-
 
 // ==============================
 // 🚀 Función: Test JSON
