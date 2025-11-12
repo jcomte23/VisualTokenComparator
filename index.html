@@ -1,19 +1,83 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="antialiased bg-[#f9fafb] dark:bg-[#0d0e11] text-gray-900 dark:text-gray-100 font-display">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://fonts.googleapis.com" rel="preconnect" />
-  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visual Token Comparator</title>
+
   <link
-    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&amp;family=Fira+Code:wght@400;500&amp;display=swap"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap"
     rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
-  <title>Document</title>
 </head>
 
-<body></body>
+<body class="flex min-h-screen flex-col items-center justify-center px-6 py-12">
+  <div class="w-full max-w-5xl text-center space-y-16">
+    <!-- Heading -->
+    <header class="space-y-4">
+      <h1 class="text-5xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+        Visual Token Comparator
+      </h1>
+      <p class="text-gray-500 dark:text-gray-400 text-lg max-w-2xl mx-auto">
+        Instantly compare token consumption between <span
+          class="font-medium text-gray-900 dark:text-gray-100">JSON</span>
+        and <span class="font-medium text-blue-500">TOON</span> formats.
+      </p>
+    </header>
+
+    <!-- Input Panels -->
+    <main class="grid grid-cols-1 md:grid-cols-2 gap-10">
+      <!-- JSON Input -->
+      <div
+        class="rounded-3xl bg-white/90 dark:bg-[#111317]/80 backdrop-blur-md border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-all duration-300">
+        <div class="p-6 text-left space-y-4">
+          <h2 class="text-xl font-semibold">JSON Input</h2>
+          <textarea id="json-input" placeholder='{
+  "user": {
+    "id": 123,
+    "name": "John Doe",
+    "email": "john.doe@example.com"
+  }
+}' class="w-full font-mono text-[15px] leading-relaxed bg-transparent border border-gray-300/50 dark:border-gray-700/60 rounded-2xl p-4 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[220px] text-gray-900 dark:text-gray-100"></textarea>
+          <div class="pt-2 text-center">
+            <p class="text-sm text-gray-500">JSON Tokens</p>
+            <p class="text-4xl font-semibold font-mono text-blue-600 dark:text-blue-400 mt-1">42</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- TOON Input -->
+      <div
+        class="rounded-3xl bg-white/90 dark:bg-[#111317]/80 backdrop-blur-md border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-all duration-300">
+        <div class="p-6 text-left space-y-4">
+          <h2 class="text-xl font-semibold">TOON Input</h2>
+          <textarea id="toon-input" placeholder='user(
+  id: 123,
+  name: "John Doe",
+  email: "john.doe@example.com"
+)' class="w-full font-mono text-[15px] leading-relaxed bg-transparent border border-gray-300/50 dark:border-gray-700/60 rounded-2xl p-4 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[220px] text-gray-900 dark:text-gray-100"></textarea>
+          <div class="pt-2 text-center">
+            <p class="text-sm text-gray-500">TOON Tokens</p>
+            <p class="text-4xl font-semibold font-mono text-blue-600 dark:text-blue-400 mt-1">23</p>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Compare Button -->
+    <div>
+      <button
+        class="px-10 py-3.5 rounded-full bg-blue-600 text-white font-medium text-lg shadow-md hover:bg-blue-700 active:scale-95 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2">
+        Start Comparison
+      </button>
+    </div>
+
+    <!-- Results -->
+    <section class="max-w-xl mx-auto text-center space-y-2">
+      <h3 class="text-lg font-medium text-gray-600 dark:text-gray-300">Token Savings</h3>
+      <p class="text-6xl font-bold font-mono text-green-600 dark:text-green-400">45%</p>
+    </section>
+  </div>
 
   <script type="module" src="/src/main.js"></script>
 </body>
