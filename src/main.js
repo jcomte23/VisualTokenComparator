@@ -8,6 +8,14 @@ const toonOutput = document.getElementById("toon-input");
 const jsonTokensEl = document.getElementById("json-tokens");
 const toonTokensEl = document.getElementById("toon-tokens");
 const savingsEl = document.getElementById("savings-value");
+const startButton = document.getElementById("btn-start-comparison");
+const resultEl = document.getElementById("result");
+
+// 🧩 Verificación inicial
+const elements = { jsonInput, toonOutput, jsonTokensEl, toonTokensEl, savingsEl, startButton, resultEl };
+for (const [key, el] of Object.entries(elements)) {
+  if (!el) console.warn(`⚠️ Elemento faltante en el DOM: ${key}`);
+}
 
 // ==============================
 // ⚙️ Función: JSON → TOON oficial
@@ -26,7 +34,6 @@ function convertToToon(obj, indent = 0) {
   const space = "  ".repeat(indent);
 
   if (Array.isArray(obj)) {
-    // Si el array contiene objetos y todas tienen las mismas claves
     if (obj.length > 0 && typeof obj[0] === "object" && !Array.isArray(obj[0])) {
       const keys = Object.keys(obj[0]);
       const header = `[${obj.length}]{${keys.join(",")}}:`;
@@ -36,12 +43,10 @@ function convertToToon(obj, indent = 0) {
         .join("\n");
       return `${header}\n${rows}`;
     } else {
-      // Array simple de valores
       const values = obj.map(formatValue).join(",");
       return `[${obj.length}]: ${values}`;
     }
   } else if (typeof obj === "object" && obj !== null) {
-    // Objetos anidados
     return Object.entries(obj)
       .map(([key, value]) => {
         if (Array.isArray(value)) {
@@ -63,7 +68,6 @@ function convertToToon(obj, indent = 0) {
 // ==============================
 function formatValue(val) {
   if (typeof val === "string") {
-    // Colocar comillas si tiene espacios o es URL
     if (val.includes(" ") || val.includes("://")) {
       return `"${val}"`;
     }
@@ -74,44 +78,61 @@ function formatValue(val) {
 }
 
 // ==============================
-// 🧮 Contar tokens
+// 🧠 Simulación de API real (mock)
 // ==============================
-function countTokens(text) {
-  return text.trim().split(/\s+/).filter(Boolean).length;
+async function mockApiCall(payload) {
+  await new Promise(res => setTimeout(res, 500));
+  const tokens = Math.floor(payload.split(/\s+/).filter(Boolean).length * 1.3);
+  return { tokens };
 }
 
 // ==============================
-// 📊 Actualización en tiempo real
+// 🚀 Función principal del botón
 // ==============================
-function updateComparison() {
+async function startComparison() {
   const jsonText = jsonInput.value.trim();
-
-  const toonText = jsonToToon(jsonText);
-  toonOutput.value = toonText;
-
-  let jsonTokens = 0;
-  let toonTokens = 0;
-
-  if (jsonText && !toonText.includes("Invalid") && !toonText.includes("Waiting")) {
-    jsonTokens = countTokens(jsonText);
-    toonTokens = countTokens(toonText);
+  if (!jsonText) {
+    toonOutput.value = "⚠️ No JSON input provided";
+    return;
   }
 
-  jsonTokensEl.textContent = jsonTokens;
-  toonTokensEl.textContent = toonTokens;
+  toonOutput.value = "⏳ Processing...";
+  resultEl.textContent = "…";
 
-  if (jsonTokens > 0 && toonTokens > 0) {
-    const savings = ((1 - toonTokens / jsonTokens) * 100).toFixed(1);
-    savingsEl.textContent = `${savings}%`;
-  } else {
-    savingsEl.textContent = "—";
+  try {
+    const toonText = jsonToToon(jsonText);
+    toonOutput.value = toonText;
+
+    if (toonText.includes("Invalid") || toonText.includes("Waiting")) {
+      toonOutput.value = toonText;
+      return;
+    }
+
+    const jsonResponse = await mockApiCall(jsonText);
+    const toonResponse = await mockApiCall(toonText);
+
+    const jsonTokens = jsonResponse.tokens;
+    const toonTokens = toonResponse.tokens;
+
+    const tokensSaved = jsonTokens - toonTokens;
+    const percentSaved = ((tokensSaved / jsonTokens) * 100).toFixed(1);
+
+    jsonTokensEl.textContent = jsonTokens;
+    toonTokensEl.textContent = toonTokens;
+    savingsEl.textContent = `${percentSaved}%`;
+    resultEl.textContent = tokensSaved;
+
+    resultEl.classList.toggle("text-green-600", tokensSaved > 0);
+    resultEl.classList.toggle("text-red-600", tokensSaved <= 0);
+  } catch (err) {
+    toonOutput.value = "❌ Error during comparison: " + err.message;
+    resultEl.textContent = "—";
   }
 }
 
 // ==============================
-// 🚀 Eventos
+// 🎯 Evento: clic en el botón
 // ==============================
-jsonInput.addEventListener("input", updateComparison);
-
-// Ejecutar al cargar
-updateComparison();
+if (startButton) {
+  startButton.addEventListener("click", startComparison);
+}
