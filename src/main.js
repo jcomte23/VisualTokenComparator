@@ -1,3 +1,4 @@
+import { showErrorToast, showSuccessToast } from './alerts';
 import './style.css'
 
 // ==============================
@@ -20,6 +21,22 @@ let toonTokens = 0;
 // ==============================
 // ⚙️ Función: JSON → TOON oficial
 // ==============================
+jsonInput.addEventListener("input", () => {
+  const jsonText = jsonInput.value.trim();
+
+  if (!jsonText) {
+    toonOutput.value = "🪶 Waiting for JSON input...";
+    return;
+  }
+
+  try {
+    const obj = JSON.parse(jsonText);
+    toonOutput.value = convertToToon(obj, 0);
+  } catch {
+    toonOutput.value = "⚠️ JSON inválido";
+  }
+});
+
 function jsonToToon(jsonStr) {
   if (jsonStr.trim() === "") return "🪶 Waiting for JSON input...";
   try {
@@ -103,6 +120,7 @@ async function geminiApiCall(payload) {
 
   } catch (err) {
     console.error("Error calling Gemini API:", err);
+    showErrorToast("Error calling Gemini API ❌");
     return { tokens: 0 };
   }
 }
@@ -113,21 +131,21 @@ async function geminiApiCall(payload) {
 async function testJSON() {
   const jsonText = jsonInput.value.trim();
   if (!jsonText) {
-    toonOutput.value = "⚠️ No JSON input provided";
+    showErrorToast("No JSON input provided ❌");
     return;
   }
 
-  toonOutput.value = "⏳ Processing JSON...";
   try {
     const response = await geminiApiCall(jsonText);
     jsonTokens = response.tokens;
 
     jsonTokensEl.textContent = jsonTokens;
-    toonOutput.value = "✅ JSON test completed";
+    showSuccessToast("✅ JSON test completed successfully");
 
     updateSavings();
   } catch (err) {
-    toonOutput.value = "❌ Error JSON: " + err.message;
+    showErrorToast("❌ Server error, check the console  ");
+    console.error(err.message);
   }
 }
 
@@ -142,7 +160,6 @@ async function testTOON() {
   }
 
   const toonText = jsonToToon(jsonText);
-  toonOutput.value = "⏳ Processing TOON...";
 
   try {
     const response = await geminiApiCall(toonText);
@@ -150,6 +167,8 @@ async function testTOON() {
 
     toonTokensEl.textContent = toonTokens;
     toonOutput.value = toonText;
+    
+    showSuccessToast("✅ TOON test completed successfully");
 
     updateSavings();
   } catch (err) {
