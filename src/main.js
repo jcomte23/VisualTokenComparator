@@ -11,12 +11,6 @@ const savingsEl = document.getElementById("savings-value");
 const startButton = document.getElementById("btn-start-comparison");
 const resultEl = document.getElementById("result");
 
-// 🧩 Verificación inicial
-const elements = { jsonInput, toonOutput, jsonTokensEl, toonTokensEl, savingsEl, startButton, resultEl };
-for (const [key, el] of Object.entries(elements)) {
-  if (!el) console.warn(`⚠️ Elemento faltante en el DOM: ${key}`);
-}
-
 // ==============================
 // ⚙️ Función: JSON → TOON oficial
 // ==============================
@@ -32,7 +26,6 @@ function jsonToToon(jsonStr) {
 
 function convertToToon(obj, indent = 0) {
   const space = "  ".repeat(indent);
-
   if (Array.isArray(obj)) {
     if (obj.length > 0 && typeof obj[0] === "object" && !Array.isArray(obj[0])) {
       const keys = Object.keys(obj[0]);
@@ -63,9 +56,6 @@ function convertToToon(obj, indent = 0) {
   }
 }
 
-// ==============================
-// 🧮 Formatear valores
-// ==============================
 function formatValue(val) {
   if (typeof val === "string") {
     if (val.includes(" ") || val.includes("://")) {
@@ -78,13 +68,31 @@ function formatValue(val) {
 }
 
 // ==============================
-// 🧠 Simulación de API real (mock)
+// 🧠 Llamada a Gemini API
 // ==============================
-async function mockApiCall(payload) {
-  await new Promise(res => setTimeout(res, 500));
-  const tokens = Math.floor(payload.split(/\s+/).filter(Boolean).length * 1.3);
+async function geminiApiCall(payload) {
+  const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent";
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-goog-api-key": import.meta.env.VITE_GEMINI_API_KEY
+    },
+    body: JSON.stringify({
+      contents: [
+        {
+          parts: [
+            { text: payload }
+          ]
+        }
+      ]
+    })
+  });
+  const data = await response.json();
+  const tokens = data.usage?.totalTokens ?? 0;
   return { tokens };
 }
+
 
 // ==============================
 // 🚀 Función principal del botón
@@ -108,8 +116,10 @@ async function startComparison() {
       return;
     }
 
-    const jsonResponse = await mockApiCall(jsonText);
-    const toonResponse = await mockApiCall(toonText);
+    // 1️⃣ Enviar JSON a Gemini
+    const jsonResponse = await geminiApiCall(jsonText);
+    // 2️⃣ Enviar TOON a Gemini
+    const toonResponse = await geminiApiCall(toonText);
 
     const jsonTokens = jsonResponse.tokens;
     const toonTokens = toonResponse.tokens;
@@ -124,6 +134,7 @@ async function startComparison() {
 
     resultEl.classList.toggle("text-green-600", tokensSaved > 0);
     resultEl.classList.toggle("text-red-600", tokensSaved <= 0);
+
   } catch (err) {
     toonOutput.value = "❌ Error during comparison: " + err.message;
     resultEl.textContent = "—";
