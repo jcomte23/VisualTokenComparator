@@ -1,5 +1,5 @@
 {
-  "name": "toon-demo",
+  "name": "visual-token-comparator",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -17,7 +17,6 @@
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@tailwindcss/vite": "^4.1.17",
-    "openai": "^6.8.1",
     "sweetalert2": "^11.26.3"
   }
 }
