@@ -8,8 +8,14 @@ const toonOutput = document.getElementById("toon-input");
 const jsonTokensEl = document.getElementById("json-tokens");
 const toonTokensEl = document.getElementById("toon-tokens");
 const savingsEl = document.getElementById("savings-value");
-const startButton = document.getElementById("btn-start-comparison");
 const resultEl = document.getElementById("result");
+
+const btnTestJSON = document.getElementById("btn-test-json");
+const btnTestTOON = document.getElementById("btn-test-toon");
+
+// Variables globales para almacenar tokens
+let jsonTokens = 0;
+let toonTokens = 0;
 
 // ==============================
 // ⚙️ Función: JSON → TOON oficial
@@ -58,92 +64,121 @@ function convertToToon(obj, indent = 0) {
 
 function formatValue(val) {
   if (typeof val === "string") {
-    if (val.includes(" ") || val.includes("://")) {
-      return `"${val}"`;
-    }
+    if (val.includes(" ") || val.includes("://")) return `"${val}"`;
     return val;
-  } else {
-    return val;
-  }
+  } else return val;
 }
 
 // ==============================
 // 🧠 Llamada a Gemini API
 // ==============================
+// ==============================
+// 🧠 Llamada a Gemini API correcta
+// ==============================
 async function geminiApiCall(payload) {
-  const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent";
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-goog-api-key": import.meta.env.VITE_GEMINI_API_KEY
-    },
-    body: JSON.stringify({
-      contents: [
-        {
-          parts: [
-            { text: payload }
-          ]
-        }
-      ]
-    })
-  });
-  const data = await response.json();
-  const tokens = data.usage?.totalTokens ?? 0;
-  return { tokens };
+  const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": import.meta.env.VITE_GEMINI_API_KEY  // <- aquí va tu llave
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              { text: payload }  // tu JSON o TOON
+            ]
+          }
+        ]
+      })
+    });
+
+    const data = await response.json();
+    console.log("Gemini raw response:", data);
+
+    // Ajusta según cómo Google devuelve los tokens
+    const tokens = data?.metadata?.tokenUsage?.totalTokens ?? 0;
+
+    return { tokens };
+
+  } catch (err) {
+    console.error("Error calling Gemini API:", err);
+    return { tokens: 0 };
+  }
 }
 
 
 // ==============================
-// 🚀 Función principal del botón
+// 🚀 Función: Test JSON
 // ==============================
-async function startComparison() {
+async function testJSON() {
   const jsonText = jsonInput.value.trim();
   if (!jsonText) {
     toonOutput.value = "⚠️ No JSON input provided";
     return;
   }
 
-  toonOutput.value = "⏳ Processing...";
-  resultEl.textContent = "…";
-
+  toonOutput.value = "⏳ Processing JSON...";
   try {
-    const toonText = jsonToToon(jsonText);
-    toonOutput.value = toonText;
-
-    if (toonText.includes("Invalid") || toonText.includes("Waiting")) {
-      toonOutput.value = toonText;
-      return;
-    }
-
-    // 1️⃣ Enviar JSON a Gemini
-    const jsonResponse = await geminiApiCall(jsonText);
-    // 2️⃣ Enviar TOON a Gemini
-    const toonResponse = await geminiApiCall(toonText);
-
-    const jsonTokens = jsonResponse.tokens;
-    const toonTokens = toonResponse.tokens;
-
-    const tokensSaved = jsonTokens - toonTokens;
-    const percentSaved = ((tokensSaved / jsonTokens) * 100).toFixed(1);
+    const response = await geminiApiCall(jsonText);
+    jsonTokens = response.tokens;
 
     jsonTokensEl.textContent = jsonTokens;
-    toonTokensEl.textContent = toonTokens;
-    savingsEl.textContent = `${percentSaved}%`;
-    resultEl.textContent = tokensSaved;
+    toonOutput.value = "✅ JSON test completed";
 
-    resultEl.classList.toggle("text-green-600", tokensSaved > 0);
-    resultEl.classList.toggle("text-red-600", tokensSaved <= 0);
-
+    updateSavings();
   } catch (err) {
-    toonOutput.value = "❌ Error during comparison: " + err.message;
-    resultEl.textContent = "—";
+    toonOutput.value = "❌ Error JSON: " + err.message;
   }
 }
 
 // ==============================
-// 🎯 Evento: clic en el botón
+// 🚀 Función: Test TOON
 // ==============================
-if (startButton) {
-  startButton.addEventListener("click", startComparison);
+async function testTOON() {
+  const jsonText = jsonInput.value.trim();
+  if (!jsonText) {
+    toonOutput.value = "⚠️ No JSON input provided";
+    return;
+  }
+
+  const toonText = jsonToToon(jsonText);
+  toonOutput.value = "⏳ Processing TOON...";
+
+  try {
+    const response = await geminiApiCall(toonText);
+    toonTokens = response.tokens;
+
+    toonTokensEl.textContent = toonTokens;
+    toonOutput.value = toonText;
+
+    updateSavings();
+  } catch (err) {
+    toonOutput.value = "❌ Error TOON: " + err.message;
+  }
 }
+
+// ==============================
+// 🔹 Actualizar ahorro
+// ==============================
+function updateSavings() {
+  if (jsonTokens > 0 && toonTokens > 0) {
+    const tokensSaved = jsonTokens - toonTokens;
+    const percentSaved = ((tokensSaved / jsonTokens) * 100).toFixed(1);
+
+    resultEl.textContent = tokensSaved;
+    savingsEl.textContent = `${percentSaved}%`;
+
+    resultEl.classList.toggle("text-green-600", tokensSaved > 0);
+    resultEl.classList.toggle("text-red-600", tokensSaved <= 0);
+  }
+}
+
+// ==============================
+// 🎯 Eventos botones
+// ==============================
+btnTestJSON.addEventListener("click", testJSON);
+btnTestTOON.addEventListener("click", testTOON);
