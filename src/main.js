@@ -111,16 +111,28 @@ async function geminiApiCall(payload) {
     });
 
     const data = await response.json();
-    console.log("Gemini raw response:", data);
+
+    // ⚠️ 1️⃣ Verificar si la respuesta HTTP fue exitosa
+    if (!response.ok) {
+      const errorMsg = data?.error?.message || `HTTP Error ${response.status}: ${response.statusText}`;
+      showErrorToast(`Gemini API call failed`);
+      throw new Error(errorMsg);
+    }
+
+    // ⚠️ 2️⃣ Verificar si el JSON trae un campo de error interno
+    if (data?.error) {
+      showErrorToast(`Gemini API call failed`);
+      throw new Error(data.error.message || "Unknown API error");
+    }
 
     // ✅ Extraemos los tokens correctamente
     const tokens = data?.usageMetadata?.promptTokenCount ?? 0;
 
+    showSuccessToast("Gemini API call successful!");
     return { tokens };
 
   } catch (err) {
     console.error("Error calling Gemini API:", err);
-    showErrorToast("Error calling Gemini API ❌");
     return { tokens: 0 };
   }
 }
@@ -140,7 +152,6 @@ async function testJSON() {
     jsonTokens = response.tokens;
 
     jsonTokensEl.textContent = jsonTokens;
-    showSuccessToast("✅ JSON test completed successfully");
 
     updateSavings();
   } catch (err) {
@@ -168,8 +179,6 @@ async function testTOON() {
     toonTokensEl.textContent = toonTokens;
     toonOutput.value = toonText;
     
-    showSuccessToast("✅ TOON test completed successfully");
-
     updateSavings();
   } catch (err) {
     toonOutput.value = "❌ Error TOON: " + err.message;
