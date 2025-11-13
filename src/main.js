@@ -1,3 +1,4 @@
+import { encode } from '@toon-format/toon';
 import { showErrorToast, showSuccessToast } from './alerts';
 import './style.css'
 
@@ -19,10 +20,12 @@ let jsonTokens = 0;
 let toonTokens = 0;
 
 // ==============================
-// ⚙️ Función: JSON → TOON oficial
+// 🧩 Convertir JSON → TOON con librería oficial
 // ==============================
 jsonInput.addEventListener("input", () => {
   const jsonText = jsonInput.value.trim();
+  console.log(jsonText);
+  
 
   if (!jsonText) {
     toonOutput.value = "🪶 Waiting for JSON input...";
@@ -31,59 +34,28 @@ jsonInput.addEventListener("input", () => {
 
   try {
     const obj = JSON.parse(jsonText);
-    toonOutput.value = convertToToon(obj, 0);
-  } catch {
-    toonOutput.value = "⚠️ JSON inválido";
+    console.log(obj);
+    
+    const toon = encode(obj);
+    toonOutput.value = toon;
+ 
+  } catch (err) {
+    toonOutput.value = "⚠️ Invalid JSON format";
   }
 });
 
+// ==============================
+// 🔁 Función auxiliar 
+// ==============================
 function jsonToToon(jsonStr) {
   if (jsonStr.trim() === "") return "🪶 Waiting for JSON input...";
   try {
     const obj = JSON.parse(jsonStr);
-    return convertToToon(obj, 0);
-  } catch {
+    return encode(obj);
+  } catch (err) {
+    console.error("Error converting JSON to TOON:", err);
     return "⚠️ Invalid JSON format";
   }
-}
-
-function convertToToon(obj, indent = 0) {
-  const space = "  ".repeat(indent);
-  if (Array.isArray(obj)) {
-    if (obj.length > 0 && typeof obj[0] === "object" && !Array.isArray(obj[0])) {
-      const keys = Object.keys(obj[0]);
-      const header = `[${obj.length}]{${keys.join(",")}}:`;
-      const rows = obj
-        .map(item => keys.map(k => formatValue(item[k])).join(","))
-        .map(line => `${space}  ${line}`)
-        .join("\n");
-      return `${header}\n${rows}`;
-    } else {
-      const values = obj.map(formatValue).join(",");
-      return `[${obj.length}]: ${values}`;
-    }
-  } else if (typeof obj === "object" && obj !== null) {
-    return Object.entries(obj)
-      .map(([key, value]) => {
-        if (Array.isArray(value)) {
-          return `${space}${key}: ${convertToToon(value, indent + 1)}`;
-        } else if (typeof value === "object" && value !== null) {
-          return `${space}${key}:\n${convertToToon(value, indent + 1)}`;
-        } else {
-          return `${space}${key}: ${formatValue(value)}`;
-        }
-      })
-      .join("\n");
-  } else {
-    return formatValue(obj);
-  }
-}
-
-function formatValue(val) {
-  if (typeof val === "string") {
-    if (val.includes(" ") || val.includes("://")) return `"${val}"`;
-    return val;
-  } else return val;
 }
 
 // ==============================
@@ -156,23 +128,39 @@ function toggleButtonLoading(button, isLoading, originalText) {
 // ==============================
 async function testJSON() {
   const jsonText = jsonInput.value.trim();
+
   if (!jsonText) {
     showErrorToast("No JSON input provided ❌");
     return;
   }
 
+  // ⏳ Activamos el estado de carga del botón
   toggleButtonLoading(btnTestJSON, true, "Run Test");
 
   try {
-    const response = await geminiApiCall(jsonText);
+    // 🧠 1. Intentamos convertir el texto en objeto JSON
+    const obj = JSON.parse(jsonText);
+
+    // 🧹 2. Lo volvemos a convertir en un JSON comprimido (sin espacios ni saltos)
+    const compactJson = JSON.stringify(obj);
+
+    // 🚀 3. Enviamos este JSON limpio a la API
+    const response = await geminiApiCall(compactJson);
+
+    // 📊 4. Actualizamos los tokens
     jsonTokens = response.tokens;
     jsonTokensEl.textContent = jsonTokens;
 
+    // ✅ 5. Mostramos toast de éxito y actualizamos ahorros
+    showSuccessToast("JSON sent successfully ✅");
     updateSavings();
+
   } catch (err) {
-    showErrorToast("❌ Server error, check the console");
-    console.error(err.message);
+    // ❌ Error si el JSON no es válido o la API falla
+    showErrorToast("❌ Invalid JSON or server error, check the console");
+    console.error("Error in testJSON:", err);
   } finally {
+    // 🔁 Restauramos el botón a su estado original
     toggleButtonLoading(btnTestJSON, false, "Run Test");
   }
 }
@@ -204,6 +192,7 @@ async function testTOON() {
     toggleButtonLoading(btnTestTOON, false, "Run Test");
   }
 }
+
 // ==============================
 // 🔹 Actualizar ahorro
 // ==============================

@@ -17,6 +17,7 @@
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@tailwindcss/vite": "^4.1.17",
+    "@toon-format/toon": "^1.0.0",
     "sweetalert2": "^11.26.3"
   }
 }
