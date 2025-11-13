@@ -55,6 +55,8 @@ jobs:
 
       # Paso 4: Construir el proyecto con Vite
       - name: Build project
+        env:
+          VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
         run: npm run build          # Comando para generar los archivos estáticos
 
       # Paso 5: Subir los archivos generados como un artefacto
