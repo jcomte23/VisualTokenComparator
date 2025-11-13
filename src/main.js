@@ -138,6 +138,20 @@ async function geminiApiCall(payload) {
 }
 
 // ==============================
+// 🔘 Control de estado del botón
+// ==============================
+function toggleButtonLoading(button, isLoading, originalText) {
+  if (isLoading) {
+    button.disabled = true;
+    button.dataset.originalText = originalText;
+    button.innerHTML = `<span class="loading-spinner"></span>Processing...`;
+  } else {
+    button.disabled = false;
+    button.innerHTML = button.dataset.originalText || originalText;
+  }
+}
+
+// ==============================
 // 🚀 Función: Test JSON
 // ==============================
 async function testJSON() {
@@ -147,16 +161,19 @@ async function testJSON() {
     return;
   }
 
+  toggleButtonLoading(btnTestJSON, true, "Run Test");
+
   try {
     const response = await geminiApiCall(jsonText);
     jsonTokens = response.tokens;
-
     jsonTokensEl.textContent = jsonTokens;
 
     updateSavings();
   } catch (err) {
-    showErrorToast("❌ Server error, check the console  ");
+    showErrorToast("❌ Server error, check the console");
     console.error(err.message);
+  } finally {
+    toggleButtonLoading(btnTestJSON, false, "Run Test");
   }
 }
 
@@ -171,6 +188,7 @@ async function testTOON() {
   }
 
   const toonText = jsonToToon(jsonText);
+  toggleButtonLoading(btnTestTOON, true, "Run Test");
 
   try {
     const response = await geminiApiCall(toonText);
@@ -178,13 +196,14 @@ async function testTOON() {
 
     toonTokensEl.textContent = toonTokens;
     toonOutput.value = toonText;
-    
+
     updateSavings();
   } catch (err) {
     toonOutput.value = "❌ Error TOON: " + err.message;
+  } finally {
+    toggleButtonLoading(btnTestTOON, false, "Run Test");
   }
 }
-
 // ==============================
 // 🔹 Actualizar ahorro
 // ==============================
